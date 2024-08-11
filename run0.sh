@@ -18,7 +18,7 @@ for ((idx=0; idx<${#benchmarks[@]}; ++idx)); do
     echo "uvm.0.out"
     echo "running"
     ls -ltr uvm.0.out
-    timeout 1500 ./uvm.0.out &> uvm.0.txt
+    ./uvm.0.out &> uvm.0.txt
     cd ${pwd0}
     echo ""
 done

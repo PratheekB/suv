@@ -25,7 +25,7 @@ for ((idx=0; idx<${#benchmarks[@]}; ++idx)); do
         echo "uvm.${os}.out"
         echo "running"
         ls -ltr uvm.${os}.out
-        timeout 1500 ./uvm.${os}.out &> uvm.${os}.txt
+        ./uvm.${os}.out &> uvm.${os}.txt
         cd ${pwd0}
         echo ""
     done
@@ -46,12 +46,12 @@ for ((idx=0; idx<${#benchmarks[@]}; ++idx)); do
         echo "uvm.${os}.out"
         echo "running"
         ls -ltr uvm.${os}.out
-        timeout 1500 ./uvm.${os}.out &> uvm.${os}.txt
+        ./uvm.${os}.out &> uvm.${os}.txt
         sudo dmesg | tail &> uvm.${os}.pf.txt
         sleep 3 
         echo "running"
         ls -ltr suv.${os}.out
-        timeout 1500 ./suv.${os}.out &> suv.${os}.txt
+        ./suv.${os}.out &> suv.${os}.txt
         sudo dmesg | tail &> suv.${os}.pf.txt
         sleep 3 
         cd ${pwd0}
@@ -59,7 +59,7 @@ for ((idx=0; idx<${#benchmarks[@]}; ++idx)); do
         cd eval
         cd $benchmark
         ls -ltr uvm.${os}.out
-        timeout 1500 ./uvm.${os}.out &> ac.${os}.txt
+        ./uvm.${os}.out &> ac.${os}.txt
         sudo dmesg | tail &> ac.${os}.pf.txt
         sleep 3 
         cd ${pwd0}
@@ -87,7 +87,7 @@ for ((idx=0; idx<${#benchmarks[@]}; ++idx)); do
         echo $(pwd)
         echo "running"
         ls -ltr sc.${os}.out
-        timeout 1500 ./sc.${os}.out &> sc.${os}.txt
+        ./sc.${os}.out &> sc.${os}.txt
         sudo dmesg | tail &> sc.${os}.pf.txt
         sleep 3 
         cd ${pwd0}

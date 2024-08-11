@@ -40,7 +40,7 @@ static int nvidia_uvm_fd = -1;
 
 /* static volatile unsigned counter = 0; */
 
-unsigned long long MBs = 2579ULL;
+unsigned long long MBs = 5451ULL;
 unsigned long long gpu_memory = 1 *  MBs * 1024ULL * 1024ULL;
 unsigned long long available = gpu_memory;
 unsigned long long pinned_memory = 0;
@@ -151,6 +151,7 @@ std::map<unsigned, unsigned> aid_invocation_id_map_reuse;
 std::map<unsigned, std::set<void*>> global_mmg_invid_alloc_list;
 std::map<void*, std::map<unsigned, unsigned>> global_alloc_inv_resinv_map;
 std::map<void*, unsigned long long> global_mmg_alloc_ac_map;
+std::vector<std::pair<void*, unsigned long long>> global_mmg_alloc_ac_vector;
 std::map<void*, unsigned> global_alloc_firstuse_map;
 std::map<unsigned, std::vector<std::pair<void*, unsigned>>> global_invid_sorted_reuse_alloc_map;
 
@@ -205,6 +206,8 @@ std::map<void*, unsigned long long> AllocationGPUResStop;
 std::map<void*, bool> AllocationStateIterBoolMap;
 std::map<void*, unsigned> AllocationStateIterStartMap;
 std::map<void*, unsigned> AllocationStateIterStopMap;
+
+unsigned max_invid = 0;
 
 // Do we need "C" linkage?
 
@@ -937,7 +940,7 @@ void perform_memory_management_iterative() {
         global_mmg_invid_alloc_list[invid].insert(alloc);
     }
     std::cout << "invid to alloc list\n";
-    unsigned max_invid = 0;
+    /* unsigned max_invid = 0; */
     for(auto i = global_mmg_invid_alloc_list.begin(); i != global_mmg_invid_alloc_list.end(); i++) {
         std::cout << i->first << " :  ";
         if(i->first > max_invid) {
@@ -1006,6 +1009,8 @@ void perform_memory_management_iterative() {
     for(auto a = global_mmg_alloc_ac_map.begin(); a != global_mmg_alloc_ac_map.end(); a++) {
         std::cout << "GL " << a->first << " " << a->second << std::endl;
         SCState[a->first] = PENGUIN_STATE_UNKNOWN;
+        /* global_mmg_alloc_ac_vector.push_back( */
+        /*         std::pair<void*, unsigned long long>(a->first, a->second)); */
     }
     // rearrange sorted reuse by GL
     std::cout << "rearrange sorted reuse by GL\n";
@@ -1059,168 +1064,204 @@ void perform_memory_management(unsigned long long memsize, unsigned invid) {
     if(global_mmg_invid_alloc_list.find(invid) != global_mmg_invid_alloc_list.end()) {
         std::set<void*> alloc_list = global_mmg_invid_alloc_list[invid];
         for(auto i = alloc_list.begin(); i != alloc_list.end(); i++) {
-            std::cout << *i << " ";
-            std::cout << global_alloc_inv_resinv_map[*i][invid] << " ";
-            std::cout << global_mmg_alloc_ac_map[*i] << " ";
-            std::cout << std::endl;
+            /* std::cout << *i << " "; */
+            /* std::cout << global_alloc_inv_resinv_map[*i][invid] << " "; */
+            /* std::cout << global_mmg_alloc_ac_map[*i] << " "; */
+            /* std::cout << std::endl; */
         }
     } else {
         std::cout << "PANIK!";
     }
-    auto sorted_reuse_vector = global_invid_sorted_reuse_alloc_map[invid];
-    std::cout << "sorted reuse\n";
-    available = gpu_memory;  // logical availability
-    for (auto al = sorted_reuse_vector.begin();
-            al != sorted_reuse_vector.end(); al++) {
-        std::cout << al->first << " ";
-        unsigned long long dsize = allocation_size_map[al->first];
-        std::cout << "\navail = " << available << std::endl;
-        std::cout << "SCavail = " << SCAvail << std::endl;
-        std::cout << "dize = " << dsize << std::endl;
-        if(available > dsize) {
-            std::cout << "pin on GPU\n";
-            if(SCState[al->first] == PENGUIN_STATE_GPU_PINNED) {
-                std::cout << "already on gpu\n";
-            available -= dsize;
-            } else {
-                SCState[al->first] = PENGUIN_STATE_GPU_PINNED;
-                // migrate and account in pinned memory
-                if(SCAvail > dsize) {
-                    std::cout << "migrate to GPU\n";
-                    SCAvail -= dsize;
-                    penguinSetPrioritizedLocation((char*) al->first, dsize, 0);
-                    cudaMemPrefetchAsync((char*)al->first, dsize, 0, 0 );
-                    std::cout << "just like that SABy\n";
-                    cudaMemAdvise((char*) al->first, dsize, cudaMemAdviseSetAccessedBy, 0);
-                    SCGPUResidentAllocs[al->first] = dsize;
-            available -= dsize;
+    if(max_invid > 1) {
+        auto sorted_reuse_vector = global_invid_sorted_reuse_alloc_map[invid];
+        std::cout << "sorted reuse\n";
+        available = gpu_memory;  // logical availability
+        for (auto al = sorted_reuse_vector.begin();
+                al != sorted_reuse_vector.end(); al++) {
+            /* std::cout << al->first << " "; */
+            unsigned long long dsize = allocation_size_map[al->first];
+            /* std::cout << "\navail = " << available << std::endl; */
+            /* std::cout << "SCavail = " << SCAvail << std::endl; */
+            /* std::cout << "dize = " << dsize << std::endl; */
+            if(available > dsize) {
+                /* std::cout << "pin on GPU\n"; */
+                if(SCState[al->first] == PENGUIN_STATE_GPU_PINNED) {
+                    /* std::cout << "already on gpu\n"; */
+                    available -= dsize;
                 } else {
-                    std::cout << "see if Evict\n";
-                    auto my_reuse = global_alloc_inv_resinv_map[al->first][invid];
-                    unsigned long long free_mem = SCAvail;
-                    unsigned long long req_mem = dsize;
-                    for(auto ec = SCGPUResidentAllocs.begin();
-                            ec != SCGPUResidentAllocs.end(); ) {
-                        auto ec_reuse = global_alloc_inv_resinv_map[ec->first][invid];
-                        std::cout << al->first << " " << ec->first << std::endl;
-                        std::cout << my_reuse << " " << ec_reuse << std::endl;
-                        if(my_reuse < ec_reuse ) {
-                            std::cout << "evict\n";
-                            cudaMemPrefetchAsync((char*)ec->first, ec->second, -1, 0 );
-                            SCState[ec->first] = PENGUIN_STATE_HOST;
-                            SCAvail += ec->second;
-                            free_mem += ec->second;
-            available += ec->second;
-                            SCGPUResidentAllocs.erase(ec++);
-                            if(free_mem >= req_mem) {
-                                break;
+                    SCState[al->first] = PENGUIN_STATE_GPU_PINNED;
+                    // migrate and account in pinned memory
+                    if(SCAvail > dsize) {
+                        /* std::cout << "migrate to GPU\n"; */
+                        SCAvail -= dsize;
+                        penguinSetPrioritizedLocation((char*) al->first, dsize, 0);
+                        cudaMemPrefetchAsync((char*)al->first, dsize, 0, 0 );
+                        /* std::cout << "just like that SABy\n"; */
+                        cudaMemAdvise((char*) al->first, dsize, cudaMemAdviseSetAccessedBy, 0);
+                        SCGPUResidentAllocs[al->first] = dsize;
+                        available -= dsize;
+                    } else {
+                        /* std::cout << "see if Evict\n"; */
+                        auto my_reuse = global_alloc_inv_resinv_map[al->first][invid];
+                        unsigned long long free_mem = SCAvail;
+                        unsigned long long req_mem = dsize;
+                        for(auto ec = SCGPUResidentAllocs.begin();
+                                ec != SCGPUResidentAllocs.end(); ) {
+                            auto ec_reuse = global_alloc_inv_resinv_map[ec->first][invid];
+                            /* std::cout << al->first << " " << ec->first << std::endl; */
+                            /* std::cout << my_reuse << " " << ec_reuse << std::endl; */
+                            if(my_reuse < ec_reuse ) {
+                                /* std::cout << "evict\n"; */
+                                cudaMemPrefetchAsync((char*)ec->first, ec->second, -1, 0 );
+                                SCState[ec->first] = PENGUIN_STATE_HOST;
+                                SCAvail += ec->second;
+                                free_mem += ec->second;
+                                available += ec->second;
+                                SCGPUResidentAllocs.erase(ec++);
+                                if(free_mem >= req_mem) {
+                                    break;
+                                }
+                            } else {
+                                ec++;
                             }
+                        }
+                        /* std::cout << "freereq mems " << free_mem << " " << req_mem << std::endl; */
+                        if(free_mem >= req_mem) {
+                            /* std::cout << "Migrate nad pin\n"; */
+                            /* std::cout << req_mem << std::endl; */
+                            penguinSetPrioritizedLocation((char*) al->first, req_mem, 0);
+                            cudaMemPrefetchAsync((char*)al->first, req_mem, 0, 0 );
+                            SCGPUResidentAllocs[al->first] = req_mem;
+                            SCState[al->first] = PENGUIN_STATE_GPU_PINNED;
+                            SCAvail -= req_mem;
+                            available -= req_mem;
+                            /* std::cout << "SABy\n"; */
+                            cudaMemAdvise((char*) al->first, dsize, cudaMemAdviseSetAccessedBy, 0);
                         } else {
-                            ec++;
+                            if(free_mem > 0) {
+                                penguinSetPrioritizedLocation((char*) al->first, free_mem, 0);
+                                cudaMemPrefetchAsync((char*)al->first, req_mem, 0, 0 );
+                                SCGPUResidentAllocs[al->first] = free_mem;
+                                SCState[al->first] = PENGUIN_STATE_GPU_PINNED_PART;
+                                SCAvail -= free_mem;
+                                available -= req_mem;
+                                /* std::cout << "SABy\n"; */
+                                cudaMemAdvise((char*) al->first, dsize, cudaMemAdviseSetAccessedBy, 0);
+                            } else {
+                                SCState[al->first] = PENGUIN_STATE_HOST;
+                                cudaMemAdvise((char*) al->first, dsize, cudaMemAdviseSetAccessedBy, 0);
+                            }
                         }
                     }
-                    std::cout << "freereq mems " << free_mem << " " << req_mem << std::endl;
-                    if(free_mem >= req_mem) {
-                        std::cout << "Migrate nad pin\n";
-                        std::cout << req_mem << std::endl;
-                        penguinSetPrioritizedLocation((char*) al->first, req_mem, 0);
-                        cudaMemPrefetchAsync((char*)al->first, req_mem, 0, 0 );
-                        SCGPUResidentAllocs[al->first] = req_mem;
-                        SCState[al->first] = PENGUIN_STATE_GPU_PINNED;
-                        SCAvail -= req_mem;
-            available -= req_mem;
-                        std::cout << "SABy\n";
+                }
+                /* available -= dsize; */
+            } else if(available > 0) {
+                /* std::cout << "pin (partial) on GPU\n"; */
+                if(SCState[al->first] == PENGUIN_STATE_GPU_PINNED_PART) {
+                    /* std::cout << "already part pinned\n"; */
+                    available -= available;
+                } else {
+                    SCState[al->first] = PENGUIN_STATE_GPU_PINNED_PART;
+                    //migrate partial and pin rest
+                    if(SCAvail > available) {
+                        /* std::cout << "migrate (partial) to GPU\n"; */
+                        SCGPUResidentAllocs[al->first] = available;
+                        penguinSetPrioritizedLocation((char*) al->first, available, 0);
+                        cudaMemPrefetchAsync((char*)al->first, available, 0, 0 );
+                        SCAvail -= available;
+                        available -= available;
+                        // pin rest on host
+                        /* std::cout << "SABy rest\n"; */
                         cudaMemAdvise((char*) al->first, dsize, cudaMemAdviseSetAccessedBy, 0);
                     } else {
-                        if(free_mem > 0) {
-                        penguinSetPrioritizedLocation((char*) al->first, free_mem, 0);
-                        cudaMemPrefetchAsync((char*)al->first, req_mem, 0, 0 );
-                        SCGPUResidentAllocs[al->first] = free_mem;
-                        SCState[al->first] = PENGUIN_STATE_GPU_PINNED_PART;
-                        SCAvail -= free_mem;
-                        available -= req_mem;
-                        std::cout << "SABy\n";
-                        cudaMemAdvise((char*) al->first, dsize, cudaMemAdviseSetAccessedBy, 0);
-                        } else {
-                        SCState[al->first] = PENGUIN_STATE_HOST;
-                        cudaMemAdvise((char*) al->first, dsize, cudaMemAdviseSetAccessedBy, 0);
-                        }
-                    }
-                }
-            }
-            /* available -= dsize; */
-        } else if(available > 0) {
-            std::cout << "pin (partial) on GPU\n";
-            if(SCState[al->first] == PENGUIN_STATE_GPU_PINNED_PART) {
-                std::cout << "already part pinned\n";
-                    available -= available;
-            } else {
-                SCState[al->first] = PENGUIN_STATE_GPU_PINNED_PART;
-                //migrate partial and pin rest
-                if(SCAvail > available) {
-                    std::cout << "migrate (partial) to GPU\n";
-                    SCGPUResidentAllocs[al->first] = available;
-                    penguinSetPrioritizedLocation((char*) al->first, available, 0);
-                    cudaMemPrefetchAsync((char*)al->first, available, 0, 0 );
-                    SCAvail -= available;
-                    available -= available;
-                    // pin rest on host
-                    std::cout << "SABy rest\n";
-                    cudaMemAdvise((char*) al->first, dsize, cudaMemAdviseSetAccessedBy, 0);
-                } else {
-                    std::cout << "see if Evict\n";
-                    auto my_reuse = global_alloc_inv_resinv_map[al->first][invid];
-                    unsigned long long free_mem = SCAvail;
-                    unsigned long long req_mem = available;
-                    for(auto ec = SCGPUResidentAllocs.begin();
-                            ec != SCGPUResidentAllocs.end(); ) {
-                        auto ec_reuse = global_alloc_inv_resinv_map[ec->first][invid];
-                        std::cout << al->first << " " << ec->first << std::endl;
-                        std::cout << my_reuse << " " << ec_reuse << std::endl;
-                        if(my_reuse < ec_reuse ) {
-                            std::cout << "evict\n";
-                            cudaMemPrefetchAsync((char*)ec->first, ec->second, -1, 0 );
-                            SCState[ec->first] = PENGUIN_STATE_HOST;
-                            SCAvail += ec->second;
-                            free_mem += ec->second;
-                            available += ec->second;
-                            SCGPUResidentAllocs.erase(ec++);
-                            if(free_mem >= req_mem) {
-                                break;
+                        /* std::cout << "see if Evict\n"; */
+                        auto my_reuse = global_alloc_inv_resinv_map[al->first][invid];
+                        unsigned long long free_mem = SCAvail;
+                        unsigned long long req_mem = available;
+                        for(auto ec = SCGPUResidentAllocs.begin();
+                                ec != SCGPUResidentAllocs.end(); ) {
+                            auto ec_reuse = global_alloc_inv_resinv_map[ec->first][invid];
+                            /* std::cout << al->first << " " << ec->first << std::endl; */
+                            /* std::cout << my_reuse << " " << ec_reuse << std::endl; */
+                            if(my_reuse < ec_reuse ) {
+                                /* std::cout << "evict\n"; */
+                                cudaMemPrefetchAsync((char*)ec->first, ec->second, -1, 0 );
+                                SCState[ec->first] = PENGUIN_STATE_HOST;
+                                SCAvail += ec->second;
+                                free_mem += ec->second;
+                                available += ec->second;
+                                SCGPUResidentAllocs.erase(ec++);
+                                if(free_mem >= req_mem) {
+                                    break;
+                                }
+                            } else {
+                                ec++;
                             }
-                        } else {
-                            ec++;
+                        }
+                        /* std::cout << "freereq mems " << free_mem << " " << req_mem << std::endl; */
+                        if(free_mem >= req_mem) {
+                            /* std::cout << "Migrate nad pin\n"; */
+                            /* std::cout << req_mem << std::endl; */
+                            penguinSetPrioritizedLocation((char*) al->first, req_mem, 0);
+                            cudaMemPrefetchAsync((char*)al->first, req_mem, 0, 0 );
+                            SCGPUResidentAllocs[al->first] = req_mem;
+                            SCAvail -= req_mem;
+                            available -= req_mem;
+                            /* std::cout << "SABy\n"; */
+                            cudaMemAdvise((char*) al->first, dsize, cudaMemAdviseSetAccessedBy, 0);
+                        }
+                        else {
+                            SCState[al->first] = PENGUIN_STATE_HOST;
+                            cudaMemAdvise((char*) al->first, dsize, cudaMemAdviseSetAccessedBy, 0);
                         }
                     }
-                    std::cout << "freereq mems " << free_mem << " " << req_mem << std::endl;
-                    if(free_mem >= req_mem) {
-                        std::cout << "Migrate nad pin\n";
-                        std::cout << req_mem << std::endl;
-                        penguinSetPrioritizedLocation((char*) al->first, req_mem, 0);
-                        cudaMemPrefetchAsync((char*)al->first, req_mem, 0, 0 );
-                        SCGPUResidentAllocs[al->first] = req_mem;
-                        SCAvail -= req_mem;
-            available -= req_mem;
-                        std::cout << "SABy\n";
-                        cudaMemAdvise((char*) al->first, dsize, cudaMemAdviseSetAccessedBy, 0);
-                    }
-                    else {
-                        SCState[al->first] = PENGUIN_STATE_HOST;
-                        cudaMemAdvise((char*) al->first, dsize, cudaMemAdviseSetAccessedBy, 0);
-                    }
                 }
-            }
-            /* available -= available; */
-        } else {
-            std::cout << "pin on host\n";
-            if(SCState[al->first] == PENGUIN_STATE_HOST) {
-                std::cout << "already on host\n";
+                /* available -= available; */
             } else {
-                SCState[al->first] = PENGUIN_STATE_HOST;
-                cudaMemAdvise((char*) al->first , dsize, cudaMemAdviseSetAccessedBy, 0);
-                // pin on host
+                /* std::cout << "pin on host\n"; */
+                if(SCState[al->first] == PENGUIN_STATE_HOST) {
+                    /* std::cout << "already on host\n"; */
+                } else {
+                    SCState[al->first] = PENGUIN_STATE_HOST;
+                    cudaMemAdvise((char*) al->first , dsize, cudaMemAdviseSetAccessedBy, 0);
+                    // pin on host
+                }
+                /* available -= available; */
             }
-            /* available -= available; */
+        }
+    } else { // maxinvid = 1
+        available = gpu_memory;  // logical availability
+        for(auto a = global_mmg_alloc_ac_map.begin();
+                a != global_mmg_alloc_ac_map.end(); a++) {
+            std::cout << "GL " << a->first << " " << a->second << std::endl;
+            SCState[a->first] = PENGUIN_STATE_UNKNOWN;
+            global_mmg_alloc_ac_vector.push_back(
+                    std::pair<void*, unsigned long long>(a->first, a->second));
+        }
+        std::sort(global_mmg_alloc_ac_vector.begin(), global_mmg_alloc_ac_vector.end(),
+                sortfunc);
+        for(auto al = global_mmg_alloc_ac_vector.begin();
+                al != global_mmg_alloc_ac_vector.end(); al++) {
+            unsigned long long dsize = allocation_size_map[al->first];
+            if(available > dsize) {
+                std::cout << "pin on GPU\n";
+                penguinSetPrioritizedLocation((char*) al->first, dsize, 0);
+                cudaMemPrefetchAsync((char*)al->first, dsize, 0, 0 );
+                available -= dsize;
+            } else if (available > 0) {
+                std::cout << "partial pin\n";
+                penguinSetPrioritizedLocation((char*) al->first, available, 0);
+                cudaMemPrefetchAsync((char*)al->first, available, 0, 0 );
+                available -= available;
+                std::cout << "SABy rest\n";
+                cudaMemAdvise((char*) al->first, dsize,
+                        cudaMemAdviseSetAccessedBy, 0);
+            } else {
+                std::cout << "host pin\n";
+                cudaMemAdvise((char*) al->first, dsize,
+                        cudaMemAdviseSetAccessedBy, 0);
+            }
+
         }
     }
     std::cout << "end reus\n";
@@ -1238,7 +1279,7 @@ void MemoryMgmtFirstInvocationNonIter() {
         global_mmg_invid_alloc_list[invid].insert(alloc);
     }
     std::cout << "invid to alloc list\n";
-    unsigned max_invid = 0;
+    /* unsigned max_invid = 0; */
     for(auto i = global_mmg_invid_alloc_list.begin(); i != global_mmg_invid_alloc_list.end(); i++) {
         std::cout << i->first << " :  ";
         if(i->first > max_invid) {
@@ -1252,95 +1293,107 @@ void MemoryMgmtFirstInvocationNonIter() {
     std::cout << "max invid = " << max_invid << std::endl;
     /* for each allocation, for each invocation, compute the next reuse */
     /* std::map<void*, std::map<unsigned, unsigned>> global_alloc_inv_resinv_map; */
-    for(auto alloc = allocation_size_map.begin(); alloc != allocation_size_map.end(); alloc++) {
-        std::cout << alloc->first << std::endl;
-        for (auto c = 1; c <= max_invid; c++) {
-            std::cout << c << std::endl;
-            unsigned nearest_reuse = 1000 ;
-            for(auto i = global_mmg_invid_alloc_list.begin(); i != global_mmg_invid_alloc_list.end(); i++) {
-                if(i->second.find(alloc->first) != i->second.end()) {
-                    std::cout << "reuse at " << i->first << std::endl;
-                    if(i->first > c && i->first < nearest_reuse) {
-                        nearest_reuse = i->first;
+    if(max_invid > 1) {
+        for(auto alloc = allocation_size_map.begin(); alloc != allocation_size_map.end(); alloc++) {
+            std::cout << alloc->first << std::endl;
+            for (auto c = 1; c <= max_invid; c++) {
+                std::cout << c << std::endl;
+                unsigned nearest_reuse = 1000 ;
+                for(auto i = global_mmg_invid_alloc_list.begin(); i != global_mmg_invid_alloc_list.end(); i++) {
+                    if(i->second.find(alloc->first) != i->second.end()) {
+                        std::cout << "reuse at " << i->first << std::endl;
+                        if(i->first > c && i->first < nearest_reuse) {
+                            nearest_reuse = i->first;
+                        }
                     }
                 }
+                std::cout << "nearest reuse is " << nearest_reuse << std::endl;
+                global_alloc_inv_resinv_map[alloc->first][c] = nearest_reuse;
             }
-            std::cout << "nearest reuse is " << nearest_reuse << std::endl;
-            global_alloc_inv_resinv_map[alloc->first][c] = nearest_reuse;
         }
-    }
-    // for each invid, list all allocations, sorted by reuse
-    std::cout << " each invid, list all allocations, sorted by reuse\n";
-    for (auto i = global_mmg_invid_alloc_list.begin(); i != global_mmg_invid_alloc_list.end(); i++) {
-        std::cout << i->first << " :  ";
-        for(auto a = i->second.begin(); a != i->second.end(); a++) {
-            std::cout << *a << " ";
-            void* alloc = *a;
-            unsigned reuse = global_alloc_inv_resinv_map[*a][i->first];
-            std::cout << reuse << " ";
-            global_invid_sorted_reuse_alloc_map[i->first].push_back(std::pair<void*, unsigned>(alloc, reuse));
-            if(global_alloc_inv_resinv_map[*a][i->first] == 1000) {
-                std::cout << global_alloc_firstuse_map[*a] << " ";
+        // for each invid, list all allocations, sorted by reuse
+        std::cout << " each invid, list all allocations, sorted by reuse\n";
+        for (auto i = global_mmg_invid_alloc_list.begin(); i != global_mmg_invid_alloc_list.end(); i++) {
+            std::cout << i->first << " :  ";
+            for(auto a = i->second.begin(); a != i->second.end(); a++) {
+                std::cout << *a << " ";
+                void* alloc = *a;
+                unsigned reuse = global_alloc_inv_resinv_map[*a][i->first];
+                std::cout << reuse << " ";
+                global_invid_sorted_reuse_alloc_map[i->first].push_back(std::pair<void*, unsigned>(alloc, reuse));
+                if(global_alloc_inv_resinv_map[*a][i->first] == 1000) {
+                    std::cout << global_alloc_firstuse_map[*a] << " ";
+                }
+                std::cout << std::endl;
+            }
+            /* global_invid_sorted_reuse_alloc_map[i->first] = sorted_reuse_vector; */
+            std::sort(global_invid_sorted_reuse_alloc_map[i->first].begin(),
+                    global_invid_sorted_reuse_alloc_map[i->first].end(), sortfunc_l_v_u);
+            std::cout << "sorted by reuse, allocations\n";
+            for(auto ra = global_invid_sorted_reuse_alloc_map[i->first].begin();
+                    ra != global_invid_sorted_reuse_alloc_map[i->first].end(); ra++) {
+                std::cout << ra->first << " ( " << ra->second << " ) " ;
             }
             std::cout << std::endl;
         }
-        /* global_invid_sorted_reuse_alloc_map[i->first] = sorted_reuse_vector; */
-        std::sort(global_invid_sorted_reuse_alloc_map[i->first].begin(),
-                global_invid_sorted_reuse_alloc_map[i->first].end(), sortfunc_l_v_u);
-        std::cout << "sorted by reuse, allocations\n";
-        for(auto ra = global_invid_sorted_reuse_alloc_map[i->first].begin();
-                ra != global_invid_sorted_reuse_alloc_map[i->first].end(); ra++) {
-            std::cout << ra->first << " ( " << ra->second << " ) " ;
+        //compute Global Locality
+        for(auto a = aid_ac_map_reuse.begin(); a != aid_ac_map_reuse.end(); a++) {
+            auto alloc = aid_allocation_map_reuse[a->first];
+            global_mmg_alloc_ac_map[alloc] += a->second;
         }
-        std::cout << std::endl;
-    }
-    //compute Global Locality
-    for(auto a = aid_ac_map_reuse.begin(); a != aid_ac_map_reuse.end(); a++) {
-        auto alloc = aid_allocation_map_reuse[a->first];
-        global_mmg_alloc_ac_map[alloc] += a->second;
-    }
-    std::cout << "global locality\n";
-    for(auto a = global_mmg_alloc_ac_map.begin(); a != global_mmg_alloc_ac_map.end(); a++) {
-        std::cout << "GL " << a->first << " " << a->second << std::endl;
-        SCState[a->first] = PENGUIN_STATE_UNKNOWN;
-    }
-    // rearrange sorted reuse by GL
-    std::cout << "rearrange sorted reuse by GL\n";
-    for (auto i = global_mmg_invid_alloc_list.begin(); i != global_mmg_invid_alloc_list.end(); i++) {
-        auto srav = global_invid_sorted_reuse_alloc_map[i->first];
-        std::vector<std::pair<void*, unsigned>> new_sorted_reuse_map;
-        std::vector<std::pair<void*, unsigned long long>> temp;
-                temp.clear();
-        unsigned current = 0;
-        srav.push_back(std::pair<void*, unsigned>(0, 1002)); // sentinal
-        for(auto ra = srav.begin(); ra != srav.end(); ra++) {
-            /* std::cout << ra->first << " ( " << ra->second << " ) " << std::endl; */
-            if(ra->second != current) {
-                // batch is over, sort by GL 
-                std::sort(temp.begin(), temp.end(), sortfunc);
-                std::cout << "sorted alloc with same reuse\n";
-                for(auto s = temp.begin(); s != temp.end(); s++) {
-                    std::cout << s->first << " " << s->second << std::endl;
-                    new_sorted_reuse_map.push_back(
-                            std::pair<void*, unsigned>(s->first, current));
-                    global_invid_sorted_reuse_alloc_map[i->first] = 
-                        new_sorted_reuse_map;
-                }
-                current = ra->second;
-                temp.clear();
-            } 
-            auto gl = global_mmg_alloc_ac_map[ra->first];
-            temp.push_back(std::pair<void*, unsigned long long>(ra->first, gl));
+        std::cout << "global locality\n";
+        for(auto a = global_mmg_alloc_ac_map.begin(); a != global_mmg_alloc_ac_map.end(); a++) {
+            std::cout << "GL " << a->first << " " << a->second << std::endl;
+            SCState[a->first] = PENGUIN_STATE_UNKNOWN;
         }
-    }
-    std::cout << "post processed sorted reuse\n";
-    for (auto i = global_mmg_invid_alloc_list.begin(); i != global_mmg_invid_alloc_list.end(); i++) {
-        std::cout << "invid = " << i->first << std::endl;
-        for(auto ra = global_invid_sorted_reuse_alloc_map[i->first].begin();
-                ra != global_invid_sorted_reuse_alloc_map[i->first].end(); ra++) {
-            std::cout << ra->first << " ( " << ra->second << " ) " ;
+        // rearrange sorted reuse by GL
+        std::cout << "rearrange sorted reuse by GL\n";
+        for (auto i = global_mmg_invid_alloc_list.begin(); i != global_mmg_invid_alloc_list.end(); i++) {
+            auto srav = global_invid_sorted_reuse_alloc_map[i->first];
+            std::vector<std::pair<void*, unsigned>> new_sorted_reuse_map;
+            std::vector<std::pair<void*, unsigned long long>> temp;
+            temp.clear();
+            unsigned current = 0;
+            srav.push_back(std::pair<void*, unsigned>(0, 1002)); // sentinal
+            for(auto ra = srav.begin(); ra != srav.end(); ra++) {
+                /* std::cout << ra->first << " ( " << ra->second << " ) " << std::endl; */
+                if(ra->second != current) {
+                    // batch is over, sort by GL 
+                    std::sort(temp.begin(), temp.end(), sortfunc);
+                    std::cout << "sorted alloc with same reuse\n";
+                    for(auto s = temp.begin(); s != temp.end(); s++) {
+                        std::cout << s->first << " " << s->second << std::endl;
+                        new_sorted_reuse_map.push_back(
+                                std::pair<void*, unsigned>(s->first, current));
+                        global_invid_sorted_reuse_alloc_map[i->first] = 
+                            new_sorted_reuse_map;
+                    }
+                    current = ra->second;
+                    temp.clear();
+                } 
+                auto gl = global_mmg_alloc_ac_map[ra->first];
+                temp.push_back(std::pair<void*, unsigned long long>(ra->first, gl));
+            }
         }
-        std::cout << std::endl;
+        std::cout << "post processed sorted reuse\n";
+        for (auto i = global_mmg_invid_alloc_list.begin(); i != global_mmg_invid_alloc_list.end(); i++) {
+            std::cout << "invid = " << i->first << std::endl;
+            for(auto ra = global_invid_sorted_reuse_alloc_map[i->first].begin();
+                    ra != global_invid_sorted_reuse_alloc_map[i->first].end(); ra++) {
+                std::cout << ra->first << " ( " << ra->second << " ) " ;
+            }
+            std::cout << std::endl;
+        }
+    } else {
+        for(auto a = aid_ac_map_reuse.begin(); a != aid_ac_map_reuse.end(); a++) {
+            auto alloc = aid_allocation_map_reuse[a->first];
+            global_mmg_alloc_ac_map[alloc] += a->second;
+        }
+        std::cout << "global locality\n";
+        for(auto a = global_mmg_alloc_ac_map.begin(); a != global_mmg_alloc_ac_map.end(); a++) {
+            std::cout << "GL " << a->first << " " << a->second << std::endl;
+            SCState[a->first] = PENGUIN_STATE_UNKNOWN;
+        }
     }
     std::cout << "end MemoryMgmtFirstInvocationNonIter\n";
 }

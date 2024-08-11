@@ -28,7 +28,7 @@ for ((idx=0; idx<${#benchmarks[@]}; ++idx)); do
         echo $(pwd)
         echo "running"
         ls -ltr uvm.${os}.${tx}.out
-        timeout 1500 ./uvm.${os}.${tx}.out &> uvm.${os}.${tx}.txt
+        ./uvm.${os}.${tx}.out &> uvm.${os}.${tx}.txt
         sleep 3 
         cd ${pwd0}
         bash driver_change.sh 0 64k 256
@@ -37,14 +37,14 @@ for ((idx=0; idx<${#benchmarks[@]}; ++idx)); do
         echo $(pwd)
         echo "running"
         ls -ltr suv.${os}.${tx}.out
-        timeout 1500 ./suv.${os}.${tx}.out &> suv.${os}.${tx}.txt
+        ./suv.${os}.${tx}.out &> suv.${os}.${tx}.txt
         sleep 3 
         cd ${pwd0}
         bash driver_change.sh 1 64k 256
         cd eval
         cd $benchmark
         ls -ltr uvm.${os}.${tx}.out
-        timeout 1500 ./uvm.${os}.${tx}.out &> ac.${os}.${tx}.txt
+        ./uvm.${os}.${tx}.out &> ac.${os}.${tx}.txt
         sleep 3 
         cd ${pwd0}
         echo ""
@@ -71,7 +71,7 @@ for ((idx=0; idx<${#benchmarks[@]}; ++idx)); do
         echo $(pwd)
         echo "running"
         ls -ltr sc.${os}.${tx}.out
-        timeout 1500 ./sc.${os}.${tx}.out &> sc.${os}.${tx}.txt
+        ./sc.${os}.${tx}.out &> sc.${os}.${tx}.txt
         sleep 3 
         cd ${pwd0}
         echo ""
