@@ -1,0 +1,17 @@
+bias1.txt filter=lfs diff=lfs merge=lfs -text
+bias2.txt filter=lfs diff=lfs merge=lfs -text
+bias6.txt filter=lfs diff=lfs merge=lfs -text
+bias8.txt filter=lfs diff=lfs merge=lfs -text
+conv5.txt filter=lfs diff=lfs merge=lfs -text
+bias5.txt filter=lfs diff=lfs merge=lfs -text
+conv1.txt filter=lfs diff=lfs merge=lfs -text
+conv2.txt filter=lfs diff=lfs merge=lfs -text
+conv3.txt filter=lfs diff=lfs merge=lfs -text
+conv4.txt filter=lfs diff=lfs merge=lfs -text
+bias3.txt filter=lfs diff=lfs merge=lfs -text
+fc6.txt filter=lfs diff=lfs merge=lfs -text
+fc7.txt filter=lfs diff=lfs merge=lfs -text
+fc8.txt filter=lfs diff=lfs merge=lfs -text
+input.txt filter=lfs diff=lfs merge=lfs -text
+bias4.txt filter=lfs diff=lfs merge=lfs -text
+bias7.txt filter=lfs diff=lfs merge=lfs -text
