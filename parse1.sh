@@ -10,7 +10,7 @@ pwd0=$(pwd) # the root folder of the artifact
 echo ${pwd0}
 echo ""
 
-filename="fig1.csv"
+filename="fig5.csv"
 echo -n "exectime" > $filename
 echo -n "," >> $filename
 for os in ${oversub[@]}; do

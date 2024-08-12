@@ -1118,7 +1118,7 @@ void perform_memory_management_global() {
             AllocationToPrefetchItersPerBatchMap[memalloc->first] =
                 newAllocation / span;
             /* std::cout << memalloc->first << " " << newAllocation << " " */ 
-                << newAllocation/span << std::endl;
+                /* << newAllocation/span << std::endl; */
         }
     }
     /* std::cout << "available = " << available << std::endl; */
