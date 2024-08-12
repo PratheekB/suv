@@ -28,7 +28,7 @@
 #include <nvml.h>
 #include <iterator>
 
-#define NVML_PROFILER 0
+#define NVML_PROFILER 1
 #define NVML_TX 0
 unsigned int nvml_running = 0;
 pthread_t monitor;
@@ -40,7 +40,7 @@ static int nvidia_uvm_fd = -1;
 
 /* static volatile unsigned counter = 0; */
 
-unsigned long long MBs = 2579ULL;
+unsigned long long MBs = 2259ULL;
 unsigned long long gpu_memory = 1 *  MBs * 1024ULL * 1024ULL;
 unsigned long long available = gpu_memory;
 unsigned long long pinned_memory = 0;
@@ -1659,6 +1659,7 @@ extern "C"
 void perform_memory_management(unsigned long long memsize, unsigned invid) {
     std::cout << "perform mem mgmt\n";
     bool has_pchase = false;
+    bool has_unknown = false;
     if(!is_iterative) {
         std::cout << "performing local memory mgmt for invid " << invid << std::endl;
         std::map<void*, unsigned long long> mmg_alloc_wss_map;
@@ -1695,7 +1696,7 @@ void perform_memory_management(unsigned long long memsize, unsigned invid) {
             mmg_alloc_pchase_map[aid_allocation_map[a->first]] = true;
         }
         for (auto a = aid_ac_incomp_map.begin(); a != aid_ac_incomp_map.end(); a++) {
-            mmg_alloc_pchase_map[aid_allocation_map[a->first]] = true;
+            has_unknown = true;
         }
         std::cout << "access count map\n";
         for (auto a = aid_ac_map.begin(); a != aid_ac_map.end(); a++) {
@@ -1735,7 +1736,7 @@ void perform_memory_management(unsigned long long memsize, unsigned invid) {
 
         std::cout << "actual decision\n";
         if(available > 0) {
-            if(has_pchase) {
+            if(has_pchase || has_unknown) {
                 std::cout << "hi enable access counters\n";
                 penguinEnableAccessCounters();
                 /* return; */

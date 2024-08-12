@@ -1540,9 +1540,10 @@ struct DynamicHostTransform : public ModulePass {
       return current;
     }
     if(RPN[0].compare("INCOMP") == 0) {
-      current = new ExprTreeNode();
-      current->op = ETO_INCOMP;
-      return current;
+      /* current = new ExprTreeNode(); */
+      /* current->op = ETO_INCOMP; */
+      /* return current; */
+        return nullptr;
     }
     for (auto str = RPN.begin(); str != RPN.end(); str++) {
       /* errs() << *str << "\n"; */

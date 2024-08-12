@@ -28,7 +28,7 @@
 #include <nvml.h>
 #include <iterator>
 
-#define NVML_PROFILER 0
+#define NVML_PROFILER 1
 #define NVML_TX 0
 unsigned int nvml_running = 0;
 pthread_t monitor;
