@@ -16,13 +16,13 @@ Please install prerequisites as mentioned in LLVM website.
 # Compile and build LLVM and SUV passes
 ---------------------------------------
 
-'''
+```
 cd llvm
 mkdir build
 cmake -S llvm -B build -G Ninja -DLLVM_ENABLE_PROJECTS='clang' -DLLVM_ENABLE_BACKENDS='x86;nvptx' -DCMAKE_BUILD_TYPE='Debug'
 cd bulid
 ninja
-'''
+```
 
 Compiling LLVM can take between 20 minutes to 2 hours, depending on the amount of compute and memory available.
 In machines with limted memory, the linking process may fail initially (due to out of memory).
@@ -33,14 +33,14 @@ Please run ninja again if this happens.
 
 From the top-level folder,
 
-'''
+```
 cd open-gpu-kernel-modules
 make modules -j
 sudo rmmod nvidia_uvm
 sudo rmmod nvidia
 sudo insmod /home/pratheek/projects/accesscounter/open-gpu-kernel-modules/kernel-open/nvidia.ko NVreg_OpenRmEnableUnsupportedGpus=1
 sudo insmod /home/pratheek/projects/accesscounter/open-gpu-kernel-modules/kernel-open/nvidia-uvm.ko
-'''
+```
 
 # Path setting
 --------------
