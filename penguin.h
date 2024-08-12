@@ -40,7 +40,7 @@ static int nvidia_uvm_fd = -1;
 
 /* static volatile unsigned counter = 0; */
 
-unsigned long long MBs = 5451ULL;
+unsigned long long MBs = 2720ULL;
 unsigned long long gpu_memory = 1 *  MBs * 1024ULL * 1024ULL;
 unsigned long long available = gpu_memory;
 unsigned long long pinned_memory = 0;
@@ -157,19 +157,19 @@ std::map<unsigned, std::vector<std::pair<void*, unsigned>>> global_invid_sorted_
 
 extern "C"
 void add_aid_ac_map_reuse(unsigned aid, unsigned long long ac) {
-    std::cout << "adi aid ac map resue " << aid  << " " << ac << "\n";
+    /* std::cout << "adi aid ac map resue " << aid  << " " << ac << "\n"; */
     aid_ac_map_reuse[aid] = ac;
 }
 
 extern "C"
 void add_aid_allocation_map_reuse(unsigned aid, void* allocation) {
-    std::cout<< "add_aid_allocation_map reuse" << aid << " " << allocation << std::endl;
+    /* std::cout<< "add_aid_allocation_map reuse" << aid << " " << allocation << std::endl; */
     aid_allocation_map_reuse[aid] = allocation;
 }
 
 extern "C"
 void add_aid_invocation_map_reuse(unsigned aid, unsigned invocation_id) {
-    std::cout<< "add_aid_invocation_map reuse" << aid << " " << invocation_id << std::endl;
+    /* std::cout<< "add_aid_invocation_map reuse" << aid << " " << invocation_id << std::endl; */
     aid_invocation_id_map_reuse[aid] = invocation_id;
 }
 
@@ -228,7 +228,7 @@ penguin_error_t penguinSetPrioritizedLocation(void *base, size_t length,
     int status;
 
 
-    std::cout << "set prioritized location " << base << std::endl;
+    /* std::cout << "set prioritized location " << base << std::endl; */
 
     cudaDeviceProp prop;
     cudaGetDeviceProperties(&prop, 0);
@@ -387,17 +387,17 @@ void penguinSuperPrefetch(void *base, size_t length, unsigned iter, unsigned ite
                 (pref_addr + length) < AllocationGPUResStop[base]){
             return;
         }
-        std::cout << "pref_addr = " << pref_addr << std::endl;
-        std::cout << "alloc start on gpu = " << AllocationGPUResStart[base] << std::endl;
-        std::cout << "alloc stop on gpu = " << AllocationGPUResStop[base] << std::endl;
+        /* std::cout << "pref_addr = " << pref_addr << std::endl; */
+        /* std::cout << "alloc start on gpu = " << AllocationGPUResStart[base] << std::endl; */
+        /* std::cout << "alloc stop on gpu = " << AllocationGPUResStop[base] << std::endl; */
 
         if(prefnum > 0 && available == 0) {
-            std::cout << "revpref\n";
+            /* std::cout << "revpref\n"; */
             cudaMemPrefetchAsync((char*)base + ((prefnum-1)*length), length, -1, 0 );
             AllocationGPUResStart[base] += length;
             AllocationGPUResStop[base] += length;
         }
-        std::cout << "pre\n";
+        /* std::cout << "pre\n"; */
         cudaMemPrefetchAsync((char*)base + (prefnum*length), length, 0, 0 );
     }
     return;
@@ -624,16 +624,16 @@ void add_invocation_id(unsigned invid) {
 extern "C"
 void addIntoAllocationMap(void** ptr, unsigned long long size) {
     void* p = (void*) *ptr;
-    std::cout << "added to allocation map, " << p << " " << size << "\n";
+    /* std::cout << "added to allocation map, " << p << " " << size << "\n"; */
     allocation_size_map[p] = size;
     return;
 }
 
 extern "C"
 void printAllocationMap() {
-    std::cout << "size map\n";
+    /* std::cout << "size map\n"; */
     for (auto a = allocation_size_map.begin(); a != allocation_size_map.end(); a++) {
-        std::cout << a->first << " " << a->second << "\n";
+        /* std::cout << a->first << " " << a->second << "\n"; */
     }
 }
 
@@ -652,9 +652,9 @@ void addACToAllocation(void* ptr, unsigned long long count) {
 
 extern "C"
 void printACToAllocationMap() {
-    std::cout << "ac map\n";
+    /* std::cout << "ac map\n"; */
     for (auto a = allocation_ac_map.begin(); a != allocation_ac_map.end(); a++) {
-        std::cout << a->first << " " << a->second << "\n";
+        /* std::cout << a->first << " " << a->second << "\n"; */
     }
 }
 
@@ -693,43 +693,43 @@ void add_pd_phi_to_allocation(void* ptr, unsigned pd_phi) {
 
 extern "C"
 unsigned get_pd_bidx(void* ptr) {
-    std::cout <<  "pd_bidx = " << allocation_pd_bidx_map[ptr] << "\n";
+    /* std::cout <<  "pd_bidx = " << allocation_pd_bidx_map[ptr] << "\n"; */
     return allocation_pd_bidx_map[ptr];
 }
 
 extern "C"
 unsigned get_pd_bidy(void* ptr) {
-    std::cout <<  "pd_bidy = " << allocation_pd_bidy_map[ptr] << "\n";
+    /* std::cout <<  "pd_bidy = " << allocation_pd_bidy_map[ptr] << "\n"; */
     return allocation_pd_bidy_map[ptr];
 }
 
 extern "C"
 unsigned get_pd_phi(void* ptr) {
-    std::cout <<  "pd_phi = " << allocation_pd_phi_map[ptr] << "\n";
+    /* std::cout <<  "pd_phi = " << allocation_pd_phi_map[ptr] << "\n"; */
     return allocation_pd_phi_map[ptr];
 }
 
 extern "C"
 void print_pd_bidx_map() {
-    std::cout << "bidx map\n";
+    /* std::cout << "bidx map\n"; */
     for (auto a = allocation_pd_bidx_map.begin(); a != allocation_pd_bidx_map.end(); a++) {
-        std::cout << a->first << " " << a->second << "\n";
+        /* std::cout << a->first << " " << a->second << "\n"; */
     }
 }
 
 extern "C"
 void print_pd_bidy_map() {
-    std::cout << "bidy map\n";
+    /* std::cout << "bidy map\n"; */
     for (auto a = allocation_pd_bidy_map.begin(); a != allocation_pd_bidy_map.end(); a++) {
-        std::cout << a->first << " " << a->second << "\n";
+        /* std::cout << a->first << " " << a->second << "\n"; */
     }
 }
 
 extern "C"
 void print_pd_phi_map() {
-    std::cout << "phi map\n";
+    /* std::cout << "phi map\n"; */
     for (auto a = allocation_pd_phi_map.begin(); a != allocation_pd_phi_map.end(); a++) {
-        std::cout << a->first << " " << a->second << "\n";
+        /* std::cout << a->first << " " << a->second << "\n"; */
     }
 }
 
@@ -743,9 +743,9 @@ void add_wss_to_map(void *ptr, unsigned long long wss, unsigned aid) {
 
 extern "C"
 void print_wss_map() {
-    std::cout << "wss map\n";
+    /* std::cout << "wss map\n"; */
     for (auto a = allocation_wss_map.begin(); a != allocation_wss_map.end(); a++) {
-        std::cout << a->first << " " << a->second << "\n";
+        /* std::cout << a->first << " " << a->second << "\n"; */
     }
 }
 
@@ -756,28 +756,28 @@ unsigned long long get_wss(void* ptr) {
 
 extern "C"
 void print_value_i32(uint64_t value) {
-    std::cout << "value(i32) = " << value << std::endl;
+    /* std::cout << "value(i32) = " << value << std::endl; */
 }
 
 extern "C"
 void print_value_i64(uint64_t value) {
-    std::cout << "value(i64) = " << value << std::endl;
+    /* std::cout << "value(i64) = " << value << std::endl; */
 }
 
 extern "C"
 void print_value_f32(float value) {
-    std::cout << "value(f32) = " << value << std::endl;
+    /* std::cout << "value(f32) = " << value << std::endl; */
 }
 
 extern "C"
 void print_value_f64(double value) {
-    std::cout << "value(f64) = " << value << std::endl;
+    /* std::cout << "value(f64) = " << value << std::endl; */
 }
 
 extern "C"
 float compute_access_density(void* ptr, unsigned numThreads, unsigned loopIters, unsigned long long size) {
     float ad = ((float)numThreads * (float)loopIters) / (float)size;
-    std::cout << "ad is " << ad << "\n";
+    /* std::cout << "ad is " << ad << "\n"; */
     return ad;
 }
 
@@ -799,18 +799,18 @@ bool sortfunc_l_v_u(std::pair<void*, unsigned > &a,  std::pair<void*, unsigned >
 /* void sort_wss() { */
 /*   std::copy(allocation_wss_map.begin(), allocation_wss_map.end(),back_inserter<std::vector<std::pair<void*, unsigned long long> > >(wss_vector)); */
 /*   std::sort(wss_vector.begin(), wss_vector.end(), sortfunc); */
-/*   std::cout << "sorted wss\n"; */
+  /* std::cout << "sorted wss\n"; */
 /*   for(auto wss = wss_vector.begin(); wss != wss_vector.end(); wss++) { */
-/*     std::cout << wss->first << " " << wss->second << "\n"; */
+    /* std::cout << wss->first << " " << wss->second << "\n"; */
 /*   } */
 /* } */
 
 extern "C"
 unsigned long long estimate_working_set2(unsigned long long wss_per_tb, unsigned bdimx, unsigned bdimy) {
-    std::cout << "wss 2 = " <<  wss_per_tb << std::endl;
+    /* std::cout << "wss 2 = " <<  wss_per_tb << std::endl; */
     unsigned long long numTBs = (1536)/(bdimx * bdimy);
     numTBs = numTBs * 82;
-    std::cout << "wss 2 sum = " << wss_per_tb * numTBs << std::endl;
+    /* std::cout << "wss 2 sum = " << wss_per_tb * numTBs << std::endl; */
     return wss_per_tb * numTBs;
 }
 
@@ -822,7 +822,7 @@ unsigned estimate_working_set(unsigned long long pd_bidx, unsigned long long pd_
     }
     unsigned long long numTBs = (1536)/(bdimx * bdimy);
     numTBs = numTBs * 82;
-    std::cout << "bdimx,y,liters = " << bdimx << " " << bdimy << " " << loopiters << "\n";
+    /* std::cout << "bdimx,y,liters = " << bdimx << " " << bdimy << " " << loopiters << "\n"; */
     std::cout << "numTBs = " << numTBs << "\n";
     unsigned long long concTBx = (gdimx > numTBs) ? numTBs: gdimx;
     unsigned long long concTBy = (gdimx > numTBs) ? 1 : (numTBs/gdimx);
@@ -859,7 +859,7 @@ unsigned estimate_working_set_iteration(unsigned gdimx, unsigned gdimy, unsigned
 
 extern "C"
 void add_aid_pchase_map(unsigned aid, void* addr, bool pchase) {
-    std::cout << "added to pchase map " << aid << " " << addr << "\n";
+    /* std::cout << "added to pchase map " << aid << " " << addr << "\n"; */
     aid_pchase_map[aid] = pchase;
     aid_allocation_map[aid] = addr;
 }
@@ -871,7 +871,7 @@ void add_aid_ac_incomp_map(unsigned aid, bool incomp) {
 
 extern "C"
 void add_aid_wss_map_iterdep(unsigned aid, unsigned long long wss) {
-    std::cout << "added to iterdep map " << aid << " " << wss << "\n";
+    /* std::cout << "added to iterdep map " << aid << " " << wss << "\n"; */
     aid_wss_map_iterdep[aid] = wss;
 }
 
@@ -887,7 +887,7 @@ void add_aid_ac_map(unsigned aid, unsigned long long ac) {
 
 extern "C"
 void add_aid_allocation_map(unsigned aid, void* allocation) {
-    std::cout<< "add_aid_allocation_map " << aid << " " << allocation << std::endl;
+    /* std::cout<< "add_aid_allocation_map " << aid << " " << allocation << std::endl; */
     aid_allocation_map[aid] = allocation;
 }
 
@@ -903,16 +903,16 @@ bool is_iterdep_access(unsigned aid) {
 
 extern "C"
 void print_aid_wss_map_iterdep() {
-    std::cout << "aid wss map (iterdep)\n";
+    /* std::cout << "aid wss map (iterdep)\n"; */
     for (auto a = aid_wss_map_iterdep.begin(); a != aid_wss_map_iterdep.end(); a++) {
-        std::cout << a->first << " " << a->second << "\n";
+        /* std::cout << a->first << " " << a->second << "\n"; */
     }
 }
 
 extern "C"
 void process_iterdep_access() {
     for (auto a = aid_wss_map_iterdep.begin(); a != aid_wss_map_iterdep.end(); a++) {
-        std::cout << a->first << " " << a->second << "\n";
+        /* std::cout << a->first << " " << a->second << "\n"; */
     }
 }
 
@@ -932,72 +932,72 @@ extern "C"
 void perform_memory_management_iterative() {
     std::cout << "mm iterative \n";
     is_iterative = true;
-    std::cout << "data from reuse\n";
+    /* std::cout << "data from reuse\n"; */
     for (auto a = aid_ac_map_reuse.begin(); a != aid_ac_map_reuse.end(); a++) {
-        std::cout << a->first << "  " << a->second << " " << aid_allocation_map_reuse[a->first] << std::endl;
+        /* std::cout << a->first << "  " << a->second << " " << aid_allocation_map_reuse[a->first] << std::endl; */
         auto alloc = aid_allocation_map_reuse[a->first];
         auto invid = aid_invocation_id_map_reuse[a->first];
         global_mmg_invid_alloc_list[invid].insert(alloc);
     }
-    std::cout << "invid to alloc list\n";
+    /* std::cout << "invid to alloc list\n"; */
     /* unsigned max_invid = 0; */
     for(auto i = global_mmg_invid_alloc_list.begin(); i != global_mmg_invid_alloc_list.end(); i++) {
-        std::cout << i->first << " :  ";
+        /* std::cout << i->first << " :  "; */
         if(i->first > max_invid) {
             max_invid = i->first;
         }
         for(auto a = i->second.begin(); a != i->second.end(); a++) {
-            std::cout << *a << " ";
+            /* std::cout << *a << " "; */
             if(global_alloc_firstuse_map.find(*a) == global_alloc_firstuse_map.end()) {
                 global_alloc_firstuse_map[*a] = i->first;
             }
         }
-        std::cout << std::endl;
+        /* std::cout << std::endl; */
     }
-    std::cout << "max invid = " << max_invid << std::endl;
+    /* std::cout << "max invid = " << max_invid << std::endl; */
     /* for each allocation, for each invocation, compute the next reuse */
     for(auto alloc = allocation_size_map.begin(); alloc != allocation_size_map.end(); alloc++) {
-        std::cout << alloc->first << std::endl;
+        /* std::cout << alloc->first << std::endl; */
         for (auto c = 1; c <= max_invid; c++) {
-            std::cout << c << std::endl;
+            /* std::cout << c << std::endl; */
             unsigned nearest_reuse = 1000 ;
             for(auto i = global_mmg_invid_alloc_list.begin(); i != global_mmg_invid_alloc_list.end(); i++) {
                 if(i->second.find(alloc->first) != i->second.end()) {
-                    std::cout << "reuse at " << i->first << std::endl;
+                    /* std::cout << "reuse at " << i->first << std::endl; */
                     if(i->first > c && i->first < nearest_reuse) {
                         nearest_reuse = i->first;
                     }
                 }
             }
-            std::cout << "nearest reuse is " << nearest_reuse << std::endl;
+            /* std::cout << "nearest reuse is " << nearest_reuse << std::endl; */
             global_alloc_inv_resinv_map[alloc->first][c] = nearest_reuse;
         }
     }
     // for each invid, list all allocations, sorted by reuse
-    std::cout << " each invid, list all allocations, sorted by reuse\n";
+    /* std::cout << " each invid, list all allocations, sorted by reuse\n"; */
     for (auto i = global_mmg_invid_alloc_list.begin(); i != global_mmg_invid_alloc_list.end(); i++) {
-        std::cout << i->first << " :  ";
+        /* std::cout << i->first << " :  "; */
         for(auto a = i->second.begin(); a != i->second.end(); a++) {
-            std::cout << *a << " ";
+            /* std::cout << *a << " "; */
             void* alloc = *a;
             unsigned reuse = global_alloc_inv_resinv_map[*a][i->first];
-            std::cout << reuse << " ";
+            /* std::cout << reuse << " "; */
             if(global_alloc_inv_resinv_map[*a][i->first] == 1000) {
-                std::cout << global_alloc_firstuse_map[*a] << " ";
+                /* std::cout << global_alloc_firstuse_map[*a] << " "; */
                 reuse = global_alloc_firstuse_map[*a] + max_invid;
             }
             global_invid_sorted_reuse_alloc_map[i->first].push_back(std::pair<void*, unsigned>(alloc, reuse));
-            std::cout << std::endl;
+            /* std::cout << std::endl; */
         }
         /* global_invid_sorted_reuse_alloc_map[i->first] = sorted_reuse_vector; */
         std::sort(global_invid_sorted_reuse_alloc_map[i->first].begin(),
                 global_invid_sorted_reuse_alloc_map[i->first].end(), sortfunc_l_v_u);
-        std::cout << "sorted by reuse, allocations\n";
+        /* std::cout << "sorted by reuse, allocations\n"; */
         for(auto ra = global_invid_sorted_reuse_alloc_map[i->first].begin();
                 ra != global_invid_sorted_reuse_alloc_map[i->first].end(); ra++) {
-            std::cout << ra->first << " " ;
+            /* std::cout << ra->first << " " ; */
         }
-        std::cout << std::endl;
+        /* std::cout << std::endl; */
     }
     //compute Global Locality
     /* std::map<void*, unsigned long long> mmg_alloc_ac_map; */
@@ -1005,15 +1005,15 @@ void perform_memory_management_iterative() {
         auto alloc = aid_allocation_map_reuse[a->first];
         global_mmg_alloc_ac_map[alloc] += a->second;
     }
-    std::cout << "global locality\n";
+    /* std::cout << "global locality\n"; */
     for(auto a = global_mmg_alloc_ac_map.begin(); a != global_mmg_alloc_ac_map.end(); a++) {
-        std::cout << "GL " << a->first << " " << a->second << std::endl;
+        /* std::cout << "GL " << a->first << " " << a->second << std::endl; */
         SCState[a->first] = PENGUIN_STATE_UNKNOWN;
         /* global_mmg_alloc_ac_vector.push_back( */
         /*         std::pair<void*, unsigned long long>(a->first, a->second)); */
     }
     // rearrange sorted reuse by GL
-    std::cout << "rearrange sorted reuse by GL\n";
+    /* std::cout << "rearrange sorted reuse by GL\n"; */
     for (auto i = global_mmg_invid_alloc_list.begin(); i != global_mmg_invid_alloc_list.end(); i++) {
         auto srav = global_invid_sorted_reuse_alloc_map[i->first];
         std::vector<std::pair<void*, unsigned>> new_sorted_reuse_map;
@@ -1026,9 +1026,9 @@ void perform_memory_management_iterative() {
             if(ra->second != current) {
                 // batch is over, sort by GL 
                 std::sort(temp.begin(), temp.end(), sortfunc);
-                std::cout << "sorted alloc with same reuse\n";
+                /* std::cout << "sorted alloc with same reuse\n"; */
                 for(auto s = temp.begin(); s != temp.end(); s++) {
-                    std::cout << s->first << " " << s->second << std::endl;
+                    /* std::cout << s->first << " " << s->second << std::endl; */
                     new_sorted_reuse_map.push_back(
                             std::pair<void*, unsigned>(s->first, current));
                     global_invid_sorted_reuse_alloc_map[i->first] = 
@@ -1041,14 +1041,14 @@ void perform_memory_management_iterative() {
             temp.push_back(std::pair<void*, unsigned long long>(ra->first, gl));
         }
     }
-    std::cout << "post processed sorted reuse\n";
+    /* std::cout << "post processed sorted reuse\n"; */
     for (auto i = global_mmg_invid_alloc_list.begin(); i != global_mmg_invid_alloc_list.end(); i++) {
-        std::cout << "invid = " << i->first << std::endl;
+        /* std::cout << "invid = " << i->first << std::endl; */
         for(auto ra = global_invid_sorted_reuse_alloc_map[i->first].begin();
                 ra != global_invid_sorted_reuse_alloc_map[i->first].end(); ra++) {
-            std::cout << ra->first << " ( " << ra->second << " ) " ;
+            /* std::cout << ra->first << " ( " << ra->second << " ) " ; */
         }
-        std::cout << std::endl;
+        /* std::cout << std::endl; */
     }
 }
 
@@ -1060,7 +1060,7 @@ void perform_memory_management(unsigned long long memsize, unsigned invid) {
     std::cout << "perform mem mgmt\n";
     bool has_pchase = false;
     // iterate over all allocation
-    std::cout << "invid = " << invid << std::endl;
+    /* std::cout << "invid = " << invid << std::endl; */
     if(global_mmg_invid_alloc_list.find(invid) != global_mmg_invid_alloc_list.end()) {
         std::set<void*> alloc_list = global_mmg_invid_alloc_list[invid];
         for(auto i = alloc_list.begin(); i != alloc_list.end(); i++) {
@@ -1070,11 +1070,11 @@ void perform_memory_management(unsigned long long memsize, unsigned invid) {
             /* std::cout << std::endl; */
         }
     } else {
-        std::cout << "PANIK!";
+        /* std::cout << "PANIK!"; */
     }
     if(max_invid > 1) {
         auto sorted_reuse_vector = global_invid_sorted_reuse_alloc_map[invid];
-        std::cout << "sorted reuse\n";
+        /* std::cout << "sorted reuse\n"; */
         available = gpu_memory;  // logical availability
         for (auto al = sorted_reuse_vector.begin();
                 al != sorted_reuse_vector.end(); al++) {
@@ -1233,7 +1233,7 @@ void perform_memory_management(unsigned long long memsize, unsigned invid) {
         available = gpu_memory;  // logical availability
         for(auto a = global_mmg_alloc_ac_map.begin();
                 a != global_mmg_alloc_ac_map.end(); a++) {
-            std::cout << "GL " << a->first << " " << a->second << std::endl;
+            /* std::cout << "GL " << a->first << " " << a->second << std::endl; */
             SCState[a->first] = PENGUIN_STATE_UNKNOWN;
             global_mmg_alloc_ac_vector.push_back(
                     std::pair<void*, unsigned long long>(a->first, a->second));
@@ -1244,110 +1244,110 @@ void perform_memory_management(unsigned long long memsize, unsigned invid) {
                 al != global_mmg_alloc_ac_vector.end(); al++) {
             unsigned long long dsize = allocation_size_map[al->first];
             if(available > dsize) {
-                std::cout << "pin on GPU\n";
+                /* std::cout << "pin on GPU\n"; */
                 penguinSetPrioritizedLocation((char*) al->first, dsize, 0);
                 cudaMemPrefetchAsync((char*)al->first, dsize, 0, 0 );
                 available -= dsize;
             } else if (available > 0) {
-                std::cout << "partial pin\n";
+                /* std::cout << "partial pin\n"; */
                 penguinSetPrioritizedLocation((char*) al->first, available, 0);
                 cudaMemPrefetchAsync((char*)al->first, available, 0, 0 );
                 available -= available;
-                std::cout << "SABy rest\n";
+                /* std::cout << "SABy rest\n"; */
                 cudaMemAdvise((char*) al->first, dsize,
                         cudaMemAdviseSetAccessedBy, 0);
             } else {
-                std::cout << "host pin\n";
+                /* std::cout << "host pin\n"; */
                 cudaMemAdvise((char*) al->first, dsize,
                         cudaMemAdviseSetAccessedBy, 0);
             }
 
         }
     }
-    std::cout << "end reus\n";
+    /* std::cout << "end reus\n"; */
     return;
 }
 
 extern "C"
 void MemoryMgmtFirstInvocationNonIter() {
     std::cout <<"MemoryMgmtFirstInvocationNonIter\n";
-    std::cout << "data from reuse\n";
+    /* std::cout << "data from reuse\n"; */
     for (auto a = aid_ac_map_reuse.begin(); a != aid_ac_map_reuse.end(); a++) {
-        std::cout << a->first << "  " << a->second << " " << aid_allocation_map_reuse[a->first] << std::endl;
+        /* std::cout << a->first << "  " << a->second << " " << aid_allocation_map_reuse[a->first] << std::endl; */
         auto alloc = aid_allocation_map_reuse[a->first];
         auto invid = aid_invocation_id_map_reuse[a->first];
         global_mmg_invid_alloc_list[invid].insert(alloc);
     }
-    std::cout << "invid to alloc list\n";
+    /* std::cout << "invid to alloc list\n"; */
     /* unsigned max_invid = 0; */
     for(auto i = global_mmg_invid_alloc_list.begin(); i != global_mmg_invid_alloc_list.end(); i++) {
-        std::cout << i->first << " :  ";
+        /* std::cout << i->first << " :  "; */
         if(i->first > max_invid) {
             max_invid = i->first;
         }
         for(auto a = i->second.begin(); a != i->second.end(); a++) {
-            std::cout << *a << " ";
+            /* std::cout << *a << " "; */
         }
-        std::cout << std::endl;
+        /* std::cout << std::endl; */
     }
-    std::cout << "max invid = " << max_invid << std::endl;
+    /* std::cout << "max invid = " << max_invid << std::endl; */
     /* for each allocation, for each invocation, compute the next reuse */
     /* std::map<void*, std::map<unsigned, unsigned>> global_alloc_inv_resinv_map; */
     if(max_invid > 1) {
         for(auto alloc = allocation_size_map.begin(); alloc != allocation_size_map.end(); alloc++) {
-            std::cout << alloc->first << std::endl;
+            /* std::cout << alloc->first << std::endl; */
             for (auto c = 1; c <= max_invid; c++) {
-                std::cout << c << std::endl;
+                /* std::cout << c << std::endl; */
                 unsigned nearest_reuse = 1000 ;
                 for(auto i = global_mmg_invid_alloc_list.begin(); i != global_mmg_invid_alloc_list.end(); i++) {
                     if(i->second.find(alloc->first) != i->second.end()) {
-                        std::cout << "reuse at " << i->first << std::endl;
+                        /* std::cout << "reuse at " << i->first << std::endl; */
                         if(i->first > c && i->first < nearest_reuse) {
                             nearest_reuse = i->first;
                         }
                     }
                 }
-                std::cout << "nearest reuse is " << nearest_reuse << std::endl;
+                /* std::cout << "nearest reuse is " << nearest_reuse << std::endl; */
                 global_alloc_inv_resinv_map[alloc->first][c] = nearest_reuse;
             }
         }
         // for each invid, list all allocations, sorted by reuse
-        std::cout << " each invid, list all allocations, sorted by reuse\n";
+        /* std::cout << " each invid, list all allocations, sorted by reuse\n"; */
         for (auto i = global_mmg_invid_alloc_list.begin(); i != global_mmg_invid_alloc_list.end(); i++) {
-            std::cout << i->first << " :  ";
+            /* std::cout << i->first << " :  "; */
             for(auto a = i->second.begin(); a != i->second.end(); a++) {
-                std::cout << *a << " ";
+                /* std::cout << *a << " "; */
                 void* alloc = *a;
                 unsigned reuse = global_alloc_inv_resinv_map[*a][i->first];
-                std::cout << reuse << " ";
+                /* std::cout << reuse << " "; */
                 global_invid_sorted_reuse_alloc_map[i->first].push_back(std::pair<void*, unsigned>(alloc, reuse));
                 if(global_alloc_inv_resinv_map[*a][i->first] == 1000) {
-                    std::cout << global_alloc_firstuse_map[*a] << " ";
+                    /* std::cout << global_alloc_firstuse_map[*a] << " "; */
                 }
-                std::cout << std::endl;
+                /* std::cout << std::endl; */
             }
             /* global_invid_sorted_reuse_alloc_map[i->first] = sorted_reuse_vector; */
             std::sort(global_invid_sorted_reuse_alloc_map[i->first].begin(),
                     global_invid_sorted_reuse_alloc_map[i->first].end(), sortfunc_l_v_u);
-            std::cout << "sorted by reuse, allocations\n";
+            /* std::cout << "sorted by reuse, allocations\n"; */
             for(auto ra = global_invid_sorted_reuse_alloc_map[i->first].begin();
                     ra != global_invid_sorted_reuse_alloc_map[i->first].end(); ra++) {
-                std::cout << ra->first << " ( " << ra->second << " ) " ;
+                /* std::cout << ra->first << " ( " << ra->second << " ) " ; */
             }
-            std::cout << std::endl;
+            /* std::cout << std::endl; */
         }
         //compute Global Locality
         for(auto a = aid_ac_map_reuse.begin(); a != aid_ac_map_reuse.end(); a++) {
             auto alloc = aid_allocation_map_reuse[a->first];
             global_mmg_alloc_ac_map[alloc] += a->second;
         }
-        std::cout << "global locality\n";
+        /* std::cout << "global locality\n"; */
         for(auto a = global_mmg_alloc_ac_map.begin(); a != global_mmg_alloc_ac_map.end(); a++) {
-            std::cout << "GL " << a->first << " " << a->second << std::endl;
+            /* std::cout << "GL " << a->first << " " << a->second << std::endl; */
             SCState[a->first] = PENGUIN_STATE_UNKNOWN;
         }
         // rearrange sorted reuse by GL
-        std::cout << "rearrange sorted reuse by GL\n";
+        /* std::cout << "rearrange sorted reuse by GL\n"; */
         for (auto i = global_mmg_invid_alloc_list.begin(); i != global_mmg_invid_alloc_list.end(); i++) {
             auto srav = global_invid_sorted_reuse_alloc_map[i->first];
             std::vector<std::pair<void*, unsigned>> new_sorted_reuse_map;
@@ -1360,9 +1360,9 @@ void MemoryMgmtFirstInvocationNonIter() {
                 if(ra->second != current) {
                     // batch is over, sort by GL 
                     std::sort(temp.begin(), temp.end(), sortfunc);
-                    std::cout << "sorted alloc with same reuse\n";
+                    /* std::cout << "sorted alloc with same reuse\n"; */
                     for(auto s = temp.begin(); s != temp.end(); s++) {
-                        std::cout << s->first << " " << s->second << std::endl;
+                        /* std::cout << s->first << " " << s->second << std::endl; */
                         new_sorted_reuse_map.push_back(
                                 std::pair<void*, unsigned>(s->first, current));
                         global_invid_sorted_reuse_alloc_map[i->first] = 
@@ -1375,27 +1375,27 @@ void MemoryMgmtFirstInvocationNonIter() {
                 temp.push_back(std::pair<void*, unsigned long long>(ra->first, gl));
             }
         }
-        std::cout << "post processed sorted reuse\n";
+        /* std::cout << "post processed sorted reuse\n"; */
         for (auto i = global_mmg_invid_alloc_list.begin(); i != global_mmg_invid_alloc_list.end(); i++) {
-            std::cout << "invid = " << i->first << std::endl;
+            /* std::cout << "invid = " << i->first << std::endl; */
             for(auto ra = global_invid_sorted_reuse_alloc_map[i->first].begin();
                     ra != global_invid_sorted_reuse_alloc_map[i->first].end(); ra++) {
-                std::cout << ra->first << " ( " << ra->second << " ) " ;
+                /* std::cout << ra->first << " ( " << ra->second << " ) " ; */
             }
-            std::cout << std::endl;
+            /* std::cout << std::endl; */
         }
     } else {
         for(auto a = aid_ac_map_reuse.begin(); a != aid_ac_map_reuse.end(); a++) {
             auto alloc = aid_allocation_map_reuse[a->first];
             global_mmg_alloc_ac_map[alloc] += a->second;
         }
-        std::cout << "global locality\n";
+        /* std::cout << "global locality\n"; */
         for(auto a = global_mmg_alloc_ac_map.begin(); a != global_mmg_alloc_ac_map.end(); a++) {
-            std::cout << "GL " << a->first << " " << a->second << std::endl;
+            /* std::cout << "GL " << a->first << " " << a->second << std::endl; */
             SCState[a->first] = PENGUIN_STATE_UNKNOWN;
         }
     }
-    std::cout << "end MemoryMgmtFirstInvocationNonIter\n";
+    /* std::cout << "end MemoryMgmtFirstInvocationNonIter\n"; */
 }
 
 /* std::pair<double, double> compute_intersection(double m1, double c1, double m2, double c2) { */
