@@ -786,9 +786,17 @@ bool sortfuncf(std::pair<void*, float> &a,  std::pair<void*, float> &b){
 /*   } */
 /* } */
 
+#define PG_SIZE (2*1024ULL*1024ULL)
+
+unsigned long long roundup(unsigned long long value) {
+    return (value + PG_SIZE -1) & ~(PG_SIZE-1);
+}
+    
 extern "C"
 unsigned long long estimate_working_set2(unsigned long long wss_per_tb, unsigned bdimx, unsigned bdimy) {
     /* std::cout << "wss 2 = " <<  wss_per_tb << std::endl; */
+    wss_per_tb = roundup(wss_per_tb * 4); // 4 bytes per element in all our workloads
+    
     unsigned long long numTBs = (1536)/(bdimx * bdimy);
     numTBs = numTBs * 82;
     /* std::cout << "wss 2 sum = " << wss_per_tb * numTBs << std::endl; */
