@@ -8,29 +8,6 @@ pwd0=$(pwd) # the root folder of the artifact
 echo ${pwd0}
 echo ""
 
-cd ${pwd0}
-echo ${pwd0}
-oversub=(0)
-
-for ((idx=0; idx<${#benchmarks[@]}; ++idx)); do
-    benchmark=${benchmarks[idx]}
-    footprint=${footprints[idx]} 
-    echo "Processing $benchmark $footprint"
-    for os in ${oversub[@]}; do
-        cd ${pwd0}
-        bash driver_change.sh 0 64k 256
-        cd eval
-        cd $benchmark
-        echo $(pwd)
-        echo "uvm.${os}.out"
-        echo "running"
-        ls -ltr uvm.${os}.out
-        ./uvm.${os}.out &> uvm.${os}.txt
-        cd ${pwd0}
-        echo ""
-    done
-done
-
 oversub=(15 30 50)
 
 for ((idx=0; idx<${#benchmarks[@]}; ++idx)); do
@@ -97,4 +74,26 @@ done
 
 cd ${pwd0}
 echo ""
+
+# cd ${pwd0}
+# echo ${pwd0}
+# oversub=(0)
+# for ((idx=0; idx<${#benchmarks[@]}; ++idx)); do
+#     benchmark=${benchmarks[idx]}
+#     footprint=${footprints[idx]} 
+#     echo "Processing $benchmark $footprint"
+#     for os in ${oversub[@]}; do
+#         cd ${pwd0}
+#         bash driver_change.sh 0 64k 256
+#         cd eval
+#         cd $benchmark
+#         echo $(pwd)
+#         echo "uvm.${os}.out"
+#         echo "running"
+#         ls -ltr uvm.${os}.out
+#         ./uvm.${os}.out &> uvm.${os}.txt
+#         cd ${pwd0}
+#         echo ""
+#     done
+# done
 

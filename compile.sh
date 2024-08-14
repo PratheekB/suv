@@ -33,28 +33,6 @@ for ((idx=0; idx<${#benchmarks[@]}; ++idx)); do
     done
 done
 
-cd ${pwd0}
-echo ${pwd0}
-oversub=(0)
-cp penguin-suv.h penguin.h
-for ((idx=0; idx<${#benchmarks[@]}; ++idx)); do
-    benchmark=${benchmarks[idx]}
-    footprint=${footprints[idx]} 
-    echo "Processing $benchmark $footprint"
-    for os in ${oversub[@]}; do
-        bash set_mem_reserve.sh $benchmark $footprint $os
-        cd ${pwd0}
-        cd eval
-        cd $benchmark
-        echo $(pwd)
-        echo "uvm.${os}.out"
-        rm uvm.${os}.out
-        bash compile_app.sh $SUVHOME $SUVHOME/llvm/ uvm.${os}.out
-        cd ${pwd0}
-        echo ""
-    done
-done
-
 benchmarks=("2dconv" "alexnet"  "bicg"  "doitgen" "fdtd" "fw" "gemm" "gramschmit" "hellinger-cuda" "mm" "mvt")
 footprints=(8192 3500  4096  8192 6912 4096 6912 3072 6912 5760 4096)
 
@@ -82,3 +60,26 @@ for ((idx=0; idx<${#benchmarks[@]}; ++idx)); do
         echo ""
     done
 done
+
+# cd ${pwd0}
+# echo ${pwd0}
+# oversub=(0)
+# cp penguin-suv.h penguin.h
+# for ((idx=0; idx<${#benchmarks[@]}; ++idx)); do
+#     benchmark=${benchmarks[idx]}
+#     footprint=${footprints[idx]} 
+#     echo "Processing $benchmark $footprint"
+#     for os in ${oversub[@]}; do
+#         bash set_mem_reserve.sh $benchmark $footprint $os
+#         cd ${pwd0}
+#         cd eval
+#         cd $benchmark
+#         echo $(pwd)
+#         echo "uvm.${os}.out"
+#         rm uvm.${os}.out
+#         bash compile_app.sh $SUVHOME $SUVHOME/llvm/ uvm.${os}.out
+#         cd ${pwd0}
+#         echo ""
+#     done
+# done
+
