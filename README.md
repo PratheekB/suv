@@ -28,6 +28,7 @@ Compiling LLVM can take between 20 minutes to 2 hours, depending on the amount o
 In machines with limted memory, the linking process may fail initially (due to out of memory).
 Please run ninja again if this happens.
 
+
 # Compile and insert the UVM driver
 ------------------------
 
@@ -57,4 +58,9 @@ The script internally calls other scripts to set various memory reservation amou
 
 Use the provided run.sh to run all the compiled binaries and generate .txt for the primary graph.
 Use the provided parse.sh script to parse the output of the workloads into a csv file.
+
+# Extending SUV
+
+SUV's passes are located in llvm/llvm/lib/Transforms/CudaAnalysis and llvm/llvm/lib/Transforms/DynamicHostTransform.
+The runtime components (SUV's default policies) are located in the header file penguin-suv.h.
 
